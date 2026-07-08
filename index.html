@@ -2,14 +2,20 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
+    <!-- 禁止手机端意外缩放，提供原生 App 体验 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>基金追踪 Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .up { color: #ef4444; } 
-        .down { color: #22c55e; } 
-        .glass-panel { background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(55, 65, 81, 0.5); }
+        .up { color: #ef4444; } /* 红涨 */
+        .down { color: #22c55e; } /* 绿跌 */
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(55, 65, 81, 0.5);
+        }
         body { -webkit-tap-highlight-color: transparent; }
+        /* 隐藏滚动条 */
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
@@ -59,6 +65,7 @@
 
         <!-- 核心数据区 -->
         <div class="glass-panel rounded-2xl shadow-xl overflow-hidden">
+            <!-- 电脑端：表格排版 -->
             <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left border-collapse whitespace-nowrap">
                     <thead>
@@ -76,6 +83,7 @@
                     <tbody id="desktop-list"></tbody>
                 </table>
             </div>
+            <!-- 手机端：卡片排版 -->
             <div class="block md:hidden flex-col" id="mobile-list"></div>
         </div>
 
@@ -86,7 +94,7 @@
                 <h3 class="text-blue-400 font-bold mb-3 flex items-center gap-2">
                     ⚡ 精细化加减仓策略
                 </h3>
-                <ul id="strategy-signals" class="text-gray-300 text-sm leading-relaxed space-y-3">
+                <ul id="strategy-signals" class="text-gray-300 text-sm leading-relaxed space-y-1">
                     <li class="animate-pulse">正在进行量价特征比对分析...</li>
                 </ul>
             </div>
@@ -96,7 +104,7 @@
                 <h3 class="text-emerald-400 font-bold mb-3 flex items-center gap-2">
                     🎯 外部基金进场推荐
                 </h3>
-                <ul id="entry-recommendations" class="text-gray-300 text-sm leading-relaxed space-y-3">
+                <ul id="entry-recommendations" class="text-gray-300 text-sm leading-relaxed space-y-1">
                     <li class="animate-pulse">正在扫描全市场宏观资产...</li>
                 </ul>
             </div>
@@ -107,11 +115,10 @@
     <script>
         const indexCodes = ['sh000001', 'sz399001', 'sz399006'];
 
-        // 包含你的真实持仓，以及金额为0的“关注基金”
+        // 资产池：实盘持仓金额已严格校对，关注标的baseAmount设为0
         const portfolio = [
-            // --- 你的实盘持仓 ---
             { code: 'sh588260', tag: '科创芯片', name: '天弘科创芯片设计ETF', baseAmount: 5863.43, bg: 'bg-indigo-900/40 text-indigo-300 border-indigo-700/50' },
-            { code: 'sh513020', tag: '香港科技', name: '国泰中证香港科技ETF', baseAmount: 4678.54, bg: 'bg-blue-900/40 text-blue-300 border-blue-700/50' },
+            { code: 'sh513020', tag: '香港科技', name: '国泰海通中证香港科技ETF', baseAmount: 4678.54, bg: 'bg-blue-900/40 text-blue-300 border-blue-700/50' },
             { code: 'sh515220', tag: '中证煤炭', name: '国泰中证煤炭ETF', baseAmount: 4237.67, bg: 'bg-stone-800 text-stone-300 border-stone-600/50' },
             { code: 'sh515660', tag: '沪深300', name: '国联安沪深300ETF', baseAmount: 3900.74, bg: 'bg-red-900/40 text-red-300 border-red-700/50' },
             { code: 'sz159870', tag: '细分化工', name: '天弘中证细分化工ETF', baseAmount: 3838.11, bg: 'bg-fuchsia-900/40 text-fuchsia-300 border-fuchsia-700/50' },
@@ -122,7 +129,7 @@
             { code: 'sz399395', tag: '场外', name: '富国资源精选混合C', baseAmount: 2218.29, bg: 'bg-gray-800 text-gray-400 border-gray-600' },
             { code: 'sh000001', tag: '场外', name: '永赢锐见成长混合C', baseAmount: 864.04, bg: 'bg-gray-800 text-gray-400 border-gray-600' },
             
-            // --- 关注基金池 (金额设为0，系统自动识别) ---
+            // 关注标的池
             { code: 'sh518880', tag: '关注', name: '华安黄金ETF (防守对冲)', baseAmount: 0, bg: 'bg-yellow-900/40 text-yellow-300 border-yellow-700/50' },
             { code: 'sh513100', tag: '关注', name: '国泰纳斯达克100 (海外配置)', baseAmount: 0, bg: 'bg-purple-900/40 text-purple-300 border-purple-700/50' },
             { code: 'sh511260', tag: '关注', name: '十年期国债ETF (无风险底仓)', baseAmount: 0, bg: 'bg-emerald-900/40 text-emerald-300 border-emerald-700/50' }
@@ -183,7 +190,6 @@
                 const realTimeAmount = asset.calculatedShares * currentPrice;
                 const dailyProfit = asset.calculatedShares * priceChange;
 
-                // 只有持有金额大于0的才计入总资产
                 if (asset.baseAmount > 0) {
                     totalAssetValue += realTimeAmount;
                     totalDailyProfit += dailyProfit;
@@ -203,9 +209,7 @@
             }
 
             updatedPortfolio.sort((a, b) => {
-                // 强制把关注的基金放在列表最下面
                 if (a.isWatch !== b.isWatch) return a.isWatch ? 1 : -1;
-                
                 if (currentSort === 'amount-desc') return b.realTimeAmount - a.realTimeAmount;
                 if (currentSort === 'profit-desc') return b.dailyProfit - a.dailyProfit;
                 if (currentSort === 'profit-asc') return a.dailyProfit - b.dailyProfit;
@@ -225,7 +229,7 @@
                 const tagDisplay = asset.isWatch ? `👀 ${asset.tag}` : asset.tag;
                 let detailUrl = asset.code.includes('sh') || asset.code.includes('sz') ? `https://gu.qq.com/${asset.code}` : `https://fund.eastmoney.com/${asset.code.replace(/[a-zA-Z]/g, '')}.html`;
 
-                // 电脑端渲染
+                // 电脑端表格布局
                 desktopContainer.innerHTML += `
                     <tr class="border-b border-gray-800/50 hover:bg-gray-800/60 transition-colors ${asset.isWatch ? 'opacity-80' : ''}">
                         <td class="p-4"><span class="text-xs px-2 py-1 rounded border ${asset.bg}">${tagDisplay}</span></td>
@@ -244,7 +248,7 @@
                     </tr>
                 `;
 
-                // 手机端渲染
+                // 手机端卡片布局
                 mobileContainer.innerHTML += `
                     <a href="${detailUrl}" target="_blank" class="flex flex-col justify-between p-4 border-b border-gray-800/60 hover:bg-gray-800/40 block ${asset.isWatch ? 'opacity-80' : ''}">
                         <div class="flex justify-between items-center mb-2">
@@ -282,26 +286,40 @@
             document.getElementById('total-profit').innerText = `${profitSign}¥${totalDailyProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
             
             const now = new Date();
-            document.getElementById('last-update').innerText = `更新于: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            document.getElementById('last-update').innerText = `最后刷新: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
         }
 
-        // ⚠️ 请填入新版 Cloudflare Worker 链接
+        // ⚠️ 请在这里填入你部署成功后的真实 Cloudflare Worker 链接
         const WORKER_API_URL = 'https://fund-tracker.1239737251.workers.dev/'; 
 
         async function fetchQuantStrategy() {
             if (WORKER_API_URL.includes('你的worker名字')) {
-                document.getElementById('strategy-signals').innerHTML = '<li class="text-gray-400 text-xs">⚠️ 请配置 Cloudflare URL 激活高阶量价分析引擎。</li>';
-                document.getElementById('entry-recommendations').innerHTML = '<li class="text-gray-400 text-xs">⚠️ 未连接量化引擎。</li>';
+                document.getElementById('strategy-signals').innerHTML = '<li class="text-gray-400 text-xs">⚠️ 请在代码底部配置 Cloudflare URL 以接收量化信号。</li>';
+                document.getElementById('entry-recommendations').innerHTML = '<li class="text-gray-400 text-xs">待接入量化引擎后获取环境分析...</li>';
                 return;
             }
             try {
                 const response = await fetch(WORKER_API_URL);
                 const data = await response.json();
+                
                 if (data.status === 'success') {
-                    document.getElementById('strategy-signals').innerHTML = data.signals.map(sig => `<li>${sig.text}</li>`).join('');
-                    document.getElementById('entry-recommendations').innerHTML = data.recs.map(rec => `<li>${rec.text}</li>`).join('');
+                    // 核心修复点 1：渲染升级后的精准持仓指令纯文本，增加下划线让多条文本更清晰
+                    document.getElementById('strategy-signals').innerHTML = data.signals.map(sig => 
+                        `<li class="mb-3 border-b border-gray-800/40 pb-3 last:border-0 last:pb-0">${sig}</li>`
+                    ).join('');
+                    
+                    // 核心修复点 2：修复字段名，将原来的 data.recs 改为 data.recommendations
+                    document.getElementById('entry-recommendations').innerHTML = data.recommendations.map(rec => 
+                        `<li class="mb-3 border-b border-gray-800/40 pb-3 last:border-0 last:pb-0">${rec}</li>`
+                    ).join('');
+                } else {
+                    throw new Error(data.error || "量化引擎返回错误状态");
                 }
-            } catch (error) {}
+            } catch (error) {
+                console.error("量化策略同步失败:", error);
+                document.getElementById('strategy-signals').innerHTML = '<li class="text-red-400 text-xs">⚠️ 数据同步异常：请检查 Cloudflare 链接部署或跨域配置。</li>';
+                document.getElementById('entry-recommendations').innerHTML = '<li class="text-gray-600 text-xs">无法获取行情分析...</li>';
+            }
         }
 
         fetchRealTimeData();
