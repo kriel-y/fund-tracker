@@ -2,147 +2,259 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <!-- 禁止手机端意外缩放，提供原生 App 体验 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>基金追踪 Dashboard</title>
+    <title>基金追踪 Dashboard Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .up { color: #ef4444; } /* 红涨 */
-        .down { color: #22c55e; } /* 绿跌 */
-        .glass-panel {
-            background: rgba(17, 24, 39, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(55, 65, 81, 0.5);
-        }
+        .up { color: #ef4444; } 
+        .down { color: #22c55e; } 
+        .glass-panel { background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(55, 65, 81, 0.5); }
         body { -webkit-tap-highlight-color: transparent; }
-        /* 隐藏滚动条 */
         ::-webkit-scrollbar { display: none; }
+        .modal-enter { animation: fadeIn 0.2s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body class="bg-gray-950 text-gray-200 font-sans min-h-screen bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] p-3 md:p-8">
 
     <div class="max-w-6xl mx-auto space-y-6">
         
-        <!-- 头部信息 -->
         <header class="flex flex-col md:flex-row md:justify-between md:items-end pb-4 border-b border-gray-800">
             <div>
-                <h1 class="text-3xl font-extrabold flex items-center gap-2 mb-3">
-                    🐂 <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">基金追踪</span>
-                </h1>
-                <div class="flex items-baseline gap-3">
-                    <span class="text-gray-400 text-sm">实盘总资产:</span>
-                    <span class="text-2xl font-mono font-bold" id="total-asset">⏳ 加载中...</span>
-                    <span class="text-gray-400 text-sm ml-4">今日盈亏:</span>
-                    <span class="text-lg font-mono font-bold" id="total-profit">--</span>
+                <div class="flex items-center gap-3 mb-3">
+                    <h1 class="text-3xl font-extrabold flex items-center gap-2">
+                        🐂 <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">Dashboard Pro</span>
+                    </h1>
+                    <span id="market-status" class="text-[10px] px-2 py-1 rounded border font-mono">获取状态...</span>
+                </div>
+                <div class="flex flex-wrap items-baseline gap-x-4 gap-y-2 mt-2">
+                    <div>
+                        <span class="text-gray-400 text-sm">实盘总资产:</span>
+                        <span class="text-2xl font-mono font-bold ml-1" id="total-asset">⏳ 载入中...</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-400 text-sm">今日盈亏:</span>
+                        <span class="text-lg font-mono font-bold ml-1" id="total-profit">--</span>
+                    </div>
+                    <div>
+                        <span class="text-gray-400 text-sm">累计收益:</span>
+                        <span class="text-lg font-mono font-bold ml-1" id="total-holding-profit">--</span>
+                    </div>
                 </div>
             </div>
-            <div class="text-xs font-mono text-gray-500 mt-4 md:mt-0" id="last-update">等待系统同步...</div>
+            
+            <div class="flex flex-col items-end gap-2 mt-4 md:mt-0">
+                <div class="text-xs font-mono text-gray-500" id="last-update">等待系统同步...</div>
+                <div class="flex gap-2">
+                    <button onclick="exportData()" class="text-[10px] text-gray-400 border border-gray-700 px-2 py-1 rounded hover:bg-gray-800 transition">💾 导出配置</button>
+                    <button onclick="document.getElementById('import-file').click()" class="text-[10px] text-gray-400 border border-gray-700 px-2 py-1 rounded hover:bg-gray-800 transition">📂 导入配置</button>
+                    <input type="file" id="import-file" class="hidden" accept=".json" onchange="importData(event)">
+                    <button onclick="resetData()" class="text-[10px] text-red-400 border border-red-900/50 px-2 py-1 rounded hover:bg-red-900/30 transition">🔄 恢复出厂</button>
+                </div>
+            </div>
         </header>
 
-        <!-- 大盘指数 -->
         <div>
             <h2 class="text-lg font-bold text-gray-300 flex items-center gap-2 mb-3">📡 大盘指数</h2>
             <div class="grid grid-cols-3 gap-3" id="market-indexes"></div>
         </div>
 
-        <!-- 筛选与排序 -->
         <div class="flex flex-col md:flex-row gap-3">
             <select id="sector-filter" class="glass-panel text-sm text-gray-300 rounded p-2 outline-none flex-1 md:flex-none">
-                <option value="">所有基金 (持仓 + 关注)</option>
-                <option value="holdings">仅看实盘持仓</option>
-                <option value="关注">仅看关注/观察池</option>
-                <option value="红利低波">红利低波</option>
+                <option value="">全量资产池 (持仓 + 关注)</option>
+                <option value="holdings">实盘持仓资产</option>
+                <option value="关注">观察标的池</option>
+                <option value="红利低波">红利低波资产</option>
                 <option value="科创芯片">芯片半导体</option>
             </select>
             
             <select id="sort-select" class="glass-panel text-sm text-gray-300 rounded p-2 outline-none flex-1 md:flex-none">
-                <option value="amount-desc">按金额 (从大到小)</option>
+                <option value="amount-desc">市值权重 (从大到小)</option>
                 <option value="profit-desc">今日盈亏 (从高到低)</option>
-                <option value="profit-asc">今日盈亏 (从低到高)</option>
-                <option value="change-desc">日涨跌幅 (从高到低)</option>
+                <option value="holding-profit-desc">累计收益 (从高到低)</option>
+                <option value="change-desc">日内涨跌幅 (从高到低)</option>
             </select>
         </div>
 
-        <!-- 核心数据区 -->
         <div class="glass-panel rounded-2xl shadow-xl overflow-hidden">
-            <!-- 电脑端：表格排版 -->
             <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left border-collapse whitespace-nowrap">
                     <thead>
                         <tr class="bg-gray-900/50 text-gray-400 text-sm border-b border-gray-700">
                             <th class="p-4 font-medium">状态/板块</th>
-                            <th class="p-4 font-medium">基金名称</th>
-                            <th class="p-4 font-medium">金额 (¥)</th>
-                            <th class="p-4 font-medium">实时净值</th>
-                            <th class="p-4 font-medium">日涨跌 ▼</th>
+                            <th class="p-4 font-medium">资产名称</th>
+                            <th class="p-4 font-medium">市值 (¥)</th>
+                            <th class="p-4 font-medium">当前净值</th>
+                            <th class="p-4 font-medium">日内涨跌</th>
                             <th class="p-4 font-medium">今日盈亏</th>
+                            <th class="p-4 font-medium">累计收益</th>
                             <th class="p-4 font-medium">仓位占比</th>
-                            <th class="p-4 font-medium">操作</th>
+                            <th class="p-4 font-medium text-center">执行操作</th>
                         </tr>
                     </thead>
                     <tbody id="desktop-list"></tbody>
                 </table>
             </div>
-            <!-- 手机端：卡片排版 -->
             <div class="block md:hidden flex-col" id="mobile-list"></div>
         </div>
 
-        <!-- 策略模块 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- 模块 1：加减仓操作建议 -->
             <div class="glass-panel rounded-xl p-5 border-l-4 border-l-blue-500">
-                <h3 class="text-blue-400 font-bold mb-3 flex items-center gap-2">
-                    ⚡ 精细化加减仓策略
-                </h3>
+                <h3 class="text-blue-400 font-bold mb-3 flex items-center gap-2">⚡ 矩阵式加减仓信号</h3>
                 <ul id="strategy-signals" class="text-gray-300 text-sm leading-relaxed space-y-1">
                     <li class="animate-pulse">正在进行量价特征比对分析...</li>
                 </ul>
             </div>
-            
-            <!-- 模块 2：外部基金推荐 -->
             <div class="glass-panel rounded-xl p-5 border-l-4 border-l-emerald-500">
-                <h3 class="text-emerald-400 font-bold mb-3 flex items-center gap-2">
-                    🎯 外部基金进场推荐
-                </h3>
+                <h3 class="text-emerald-400 font-bold mb-3 flex items-center gap-2">🎯 外部宏观环境指引</h3>
                 <ul id="entry-recommendations" class="text-gray-300 text-sm leading-relaxed space-y-1">
                     <li class="animate-pulse">正在扫描全市场宏观资产...</li>
                 </ul>
             </div>
         </div>
+    </div>
 
+    <div id="trade-modal" class="fixed inset-0 bg-black/80 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-sm p-6 shadow-2xl modal-enter">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-gray-100">资产调仓</h3>
+                <button onclick="closeTradeModal()" class="text-gray-500 hover:text-gray-300 text-xl font-bold">&times;</button>
+            </div>
+            
+            <div class="mb-4">
+                <div class="font-bold text-blue-400 text-base" id="trade-name">--</div>
+            </div>
+            
+            <div class="flex justify-between mb-4 bg-gray-800 p-3 rounded-lg">
+                <div>
+                    <div class="text-[10px] text-gray-500">实时成本价 / 现价</div>
+                    <div class="font-mono font-bold text-sm text-gray-300"><span id="trade-cost">--</span> / <span id="trade-price" class="text-blue-300">--</span></div>
+                </div>
+                <div class="text-right">
+                    <div class="text-[10px] text-gray-500">当前持有市值</div>
+                    <div class="font-mono font-bold text-sm" id="trade-current-amt">--</div>
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="text-xs text-gray-400 mb-2 block">操作金额 (¥)</label>
+                <input type="number" id="trade-input" placeholder="输入金额..." class="w-full bg-gray-950 border border-gray-700 text-gray-100 rounded-lg p-3 outline-none focus:border-blue-500 font-mono text-lg">
+            </div>
+
+            <div class="flex gap-2 mb-5">
+                <button onclick="setTradePercent(0.25)" class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs py-1.5 rounded transition border border-gray-700">25% 仓位</button>
+                <button onclick="setTradePercent(0.50)" class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs py-1.5 rounded transition border border-gray-700">50% 仓位</button>
+                <button onclick="setTradePercent(1.00)" class="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs py-1.5 rounded transition border border-gray-700">全仓清仓</button>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="executeTrade('buy')" class="flex-1 bg-red-600/20 text-red-400 border border-red-800/50 hover:bg-red-600/40 py-2.5 rounded-lg font-bold transition">买入 (平摊成本)</button>
+                <button onclick="executeTrade('sell')" class="flex-1 bg-green-600/20 text-green-400 border border-green-800/50 hover:bg-green-600/40 py-2.5 rounded-lg font-bold transition">卖出 (锁定利润)</button>
+            </div>
+        </div>
     </div>
 
     <script>
         const indexCodes = ['sh000001', 'sz399001', 'sz399006'];
 
-        // 资产池：实盘持仓金额已严格校对，关注标的baseAmount设为0
-        const portfolio = [
-            { code: 'sh588260', tag: '科创芯片', name: '天弘科创芯片设计ETF', baseAmount: 5863.43, bg: 'bg-indigo-900/40 text-indigo-300 border-indigo-700/50' },
-            { code: 'sh513020', tag: '香港科技', name: '国泰海通中证香港科技ETF', baseAmount: 4678.54, bg: 'bg-blue-900/40 text-blue-300 border-blue-700/50' },
-            { code: 'sh515220', tag: '中证煤炭', name: '国泰中证煤炭ETF', baseAmount: 4237.67, bg: 'bg-stone-800 text-stone-300 border-stone-600/50' },
-            { code: 'sh515660', tag: '沪深300', name: '国联安沪深300ETF', baseAmount: 3900.74, bg: 'bg-red-900/40 text-red-300 border-red-700/50' },
-            { code: 'sz159870', tag: '细分化工', name: '天弘中证细分化工ETF', baseAmount: 3838.11, bg: 'bg-fuchsia-900/40 text-fuchsia-300 border-fuchsia-700/50' },
-            { code: 'sh563020', tag: '红利低波', name: '易方达中证红利低波动', baseAmount: 3462.44, bg: 'bg-orange-900/40 text-orange-300 border-orange-700/50' },
-            { code: 'sh515450', tag: '红利低波', name: '南方红利低波50ETF', baseAmount: 2838.66, bg: 'bg-orange-900/40 text-orange-300 border-orange-700/50' },
-            { code: 'sz160616', tag: '石油天然气', name: '鹏华国证石油天然气LOF', baseAmount: 2472.12, bg: 'bg-yellow-900/40 text-yellow-300 border-yellow-700/50' },
-            { code: 'sh560060', tag: '电网设备', name: '华夏中证电网设备ETF', baseAmount: 2398.66, bg: 'bg-teal-900/40 text-teal-300 border-teal-700/50' },
-            { code: 'sz399395', tag: '场外', name: '富国资源精选混合C', baseAmount: 2218.29, bg: 'bg-gray-800 text-gray-400 border-gray-600' },
-            { code: 'sh000001', tag: '场外', name: '永赢锐见成长混合C', baseAmount: 864.04, bg: 'bg-gray-800 text-gray-400 border-gray-600' },
-            
-            // 关注标的池
-            { code: 'sh518880', tag: '关注', name: '华安黄金ETF (防守对冲)', baseAmount: 0, bg: 'bg-yellow-900/40 text-yellow-300 border-yellow-700/50' },
-            { code: 'sh513100', tag: '关注', name: '国泰纳斯达克100 (海外配置)', baseAmount: 0, bg: 'bg-purple-900/40 text-purple-300 border-purple-700/50' },
-            { code: 'sh511260', tag: '关注', name: '十年期国债ETF (无风险底仓)', baseAmount: 0, bg: 'bg-emerald-900/40 text-emerald-300 border-emerald-700/50' }
+        const defaultPortfolio = [
+            { code: 'sh588260', tag: '科创芯片', name: '天弘科创芯片设计ETF', baseAmount: 5863.43, costPrice: 0, bg: 'bg-indigo-900/40 text-indigo-300 border-indigo-700/50' },
+            { code: 'sh513020', tag: '香港科技', name: '国泰海通中证香港科技ETF', baseAmount: 4678.54, costPrice: 0, bg: 'bg-blue-900/40 text-blue-300 border-blue-700/50' },
+            { code: 'sh515220', tag: '中证煤炭', name: '国泰中证煤炭ETF', baseAmount: 4237.67, costPrice: 0, bg: 'bg-stone-800 text-stone-300 border-stone-600/50' },
+            { code: 'sh515660', tag: '沪深300', name: '国联安沪深300ETF', baseAmount: 3900.74, costPrice: 0, bg: 'bg-red-900/40 text-red-300 border-red-700/50' },
+            { code: 'sz159870', tag: '细分化工', name: '天弘中证细分化工ETF', baseAmount: 3838.11, costPrice: 0, bg: 'bg-fuchsia-900/40 text-fuchsia-300 border-fuchsia-700/50' },
+            { code: 'sh563020', tag: '红利低波', name: '易方达中证红利低波动', baseAmount: 3462.44, costPrice: 0, bg: 'bg-orange-900/40 text-orange-300 border-orange-700/50' },
+            { code: 'sh515450', tag: '红利低波', name: '南方红利低波50ETF', baseAmount: 2838.66, costPrice: 0, bg: 'bg-orange-900/40 text-orange-300 border-orange-700/50' },
+            { code: 'sz160616', tag: '石油天然气', name: '鹏华国证石油天然气LOF', baseAmount: 2472.12, costPrice: 0, bg: 'bg-yellow-900/40 text-yellow-300 border-yellow-700/50' },
+            { code: 'sh560060', tag: '电网设备', name: '华夏中证电网设备ETF', baseAmount: 2398.66, costPrice: 0, bg: 'bg-teal-900/40 text-teal-300 border-teal-700/50' },
+            { code: 'sz399395', tag: '场外', name: '富国资源精选混合C', baseAmount: 2218.29, costPrice: 0, bg: 'bg-gray-800 text-gray-400 border-gray-600' },
+            { code: 'sh000001', tag: '场外', name: '永赢锐见成长混合C', baseAmount: 864.04, costPrice: 0, bg: 'bg-gray-800 text-gray-400 border-gray-600' },
+            { code: 'sh518880', tag: '关注', name: '华安黄金ETF (防守对冲)', baseAmount: 0, costPrice: 0, bg: 'bg-yellow-900/40 text-yellow-300 border-yellow-700/50' },
+            { code: 'sh513100', tag: '关注', name: '国泰纳斯达克100', baseAmount: 0, costPrice: 0, bg: 'bg-purple-900/40 text-purple-300 border-purple-700/50' },
+            { code: 'sh511260', tag: '关注', name: '十年期国债ETF', baseAmount: 0, costPrice: 0, bg: 'bg-emerald-900/40 text-emerald-300 border-emerald-700/50' }
         ];
 
+        let portfolio = [];
         let isInitialized = false;
         let currentSort = 'amount-desc';
         let currentSector = '';
+        let currentTradeFund = null;
+        let marketOpenState = true;
 
         document.getElementById('sort-select').addEventListener('change', (e) => { currentSort = e.target.value; renderList(); });
         document.getElementById('sector-filter').addEventListener('change', (e) => { currentSector = e.target.value; renderList(); });
 
+        // 休眠管理逻辑
+        function checkMarketStatus() {
+            const now = new Date();
+            const day = now.getDay();
+            const timeVal = now.getHours() * 100 + now.getMinutes();
+            // 简单判定：周一至周五，09:30-16:00
+            const isOpen = (day >= 1 && day <= 5) && (timeVal >= 930 && timeVal <= 1600);
+            marketOpenState = isOpen;
+
+            const statusEl = document.getElementById('market-status');
+            if (isOpen) {
+                statusEl.className = "text-[10px] px-2 py-1 rounded border font-mono bg-green-900/30 text-green-400 border-green-800";
+                statusEl.innerText = "🟢 交易中";
+            } else {
+                statusEl.className = "text-[10px] px-2 py-1 rounded border font-mono bg-red-900/30 text-red-400 border-red-800";
+                statusEl.innerText = "🔴 已休市";
+            }
+            return isOpen;
+        }
+
+        // 本地数据生命周期管理
+        function initData() {
+            const savedData = localStorage.getItem('fund_portfolio_v3'); // 升级 key
+            if (savedData) {
+                portfolio = JSON.parse(savedData);
+                isInitialized = true;
+            } else {
+                portfolio = JSON.parse(JSON.stringify(defaultPortfolio));
+                isInitialized = false; 
+            }
+        }
+        
+        function resetData() {
+            if(confirm("警告：恢复出厂设置将清空所有调仓记录与历史收益，回到初始默认值，确定吗？")) {
+                localStorage.removeItem('fund_portfolio_v3');
+                initData();
+                fetchRealTimeData();
+            }
+        }
+
+        function exportData() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(portfolio));
+            const dl = document.createElement('a');
+            dl.setAttribute("href", dataStr);
+            dl.setAttribute("download", `portfolio_backup_${new Date().getTime()}.json`);
+            dl.click();
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    portfolio = JSON.parse(e.target.result);
+                    localStorage.setItem('fund_portfolio_v3', JSON.stringify(portfolio));
+                    isInitialized = true;
+                    alert("✅ 数据导入成功！");
+                    fetchRealTimeData();
+                } catch(err) {
+                    alert("❌ 导入失败，文件格式错误！");
+                }
+            };
+            reader.readAsText(file);
+        }
+
         function fetchRealTimeData() {
+            if(portfolio.length === 0) initData();
+            // 如果休市，只有初次打开才请求一次数据，后续跳过轮询以节省资源
+            if(!checkMarketStatus() && isInitialized && document.getElementById('desktop-list').innerHTML !== "") return;
+            
             const queryCodes = [...indexCodes, ...portfolio.map(item => item.code)].join(',');
             const script = document.createElement('script');
             script.src = `https://qt.gtimg.cn/q=${queryCodes}&t=${new Date().getTime()}`;
@@ -170,9 +282,8 @@
         }
 
         function renderList() {
-            let totalAssetValue = 0;
-            let totalDailyProfit = 0;
-            let updatedPortfolio = [];
+            let totalAssetValue = 0, totalDailyProfit = 0, totalHoldingProfit = 0;
+            let displayPortfolio = [];
 
             portfolio.forEach(asset => {
                 const rawData = window[`v_${asset.code}`];
@@ -181,38 +292,46 @@
                 const currentPrice = parseFloat(fields[3]); 
                 const priceChange = parseFloat(fields[31]); 
                 const changePercent = parseFloat(fields[32]); 
+                const basePrice = (asset.tag === '场外') ? (currentPrice - priceChange) : currentPrice;
 
+                // 首次推算逻辑 + 成本价初始化补全 (用于旧数据迁移)
                 if (!isInitialized) {
-                    const basePrice = (asset.tag === '场外') ? (currentPrice - priceChange) : currentPrice;
                     asset.calculatedShares = asset.baseAmount === 0 ? 0 : (asset.baseAmount / (basePrice || 1));
+                    asset.costPrice = basePrice;
+                } else if (!asset.costPrice && asset.calculatedShares > 0) {
+                    asset.costPrice = basePrice; // 防呆兼容
                 }
 
-                const realTimeAmount = asset.calculatedShares * currentPrice;
-                const dailyProfit = asset.calculatedShares * priceChange;
+                const realTimeAmount = (asset.calculatedShares || 0) * currentPrice;
+                const dailyProfit = (asset.calculatedShares || 0) * priceChange;
+                const holdingProfit = (asset.calculatedShares || 0) * (currentPrice - (asset.costPrice || currentPrice));
+                const isWatch = (asset.calculatedShares === 0 && asset.tag === '关注');
 
-                if (asset.baseAmount > 0) {
+                if (realTimeAmount > 0) {
                     totalAssetValue += realTimeAmount;
                     totalDailyProfit += dailyProfit;
+                    totalHoldingProfit += holdingProfit;
                 }
 
-                updatedPortfolio.push({
-                    ...asset, currentPrice, priceChange, changePercent, realTimeAmount, dailyProfit, isWatch: asset.baseAmount === 0
+                displayPortfolio.push({
+                    ...asset, currentPrice, priceChange, changePercent, realTimeAmount, dailyProfit, holdingProfit, isWatch
                 });
             });
 
-            isInitialized = true; 
-
-            if (currentSector === 'holdings') {
-                updatedPortfolio = updatedPortfolio.filter(a => !a.isWatch);
-            } else if (currentSector) {
-                updatedPortfolio = updatedPortfolio.filter(a => a.tag === currentSector);
+            if (!isInitialized) {
+                localStorage.setItem('fund_portfolio_v3', JSON.stringify(portfolio));
+                isInitialized = true;
             }
 
-            updatedPortfolio.sort((a, b) => {
+            if (currentSector === 'holdings') displayPortfolio = displayPortfolio.filter(a => !a.isWatch);
+            else if (currentSector) displayPortfolio = displayPortfolio.filter(a => a.tag === currentSector);
+
+            displayPortfolio.sort((a, b) => {
                 if (a.isWatch !== b.isWatch) return a.isWatch ? 1 : -1;
                 if (currentSort === 'amount-desc') return b.realTimeAmount - a.realTimeAmount;
                 if (currentSort === 'profit-desc') return b.dailyProfit - a.dailyProfit;
                 if (currentSort === 'profit-asc') return a.dailyProfit - b.dailyProfit;
+                if (currentSort === 'holding-profit-desc') return b.holdingProfit - a.holdingProfit;
                 if (currentSort === 'change-desc') return b.changePercent - a.changePercent;
                 return 0;
             });
@@ -222,106 +341,161 @@
             desktopContainer.innerHTML = '';
             mobileContainer.innerHTML = '';
 
-            updatedPortfolio.forEach(asset => {
+            displayPortfolio.forEach(asset => {
                 const weightPercent = asset.isWatch ? '0.00' : ((asset.realTimeAmount / totalAssetValue) * 100).toFixed(2);
                 const colorClass = asset.changePercent > 0 ? 'up' : (asset.changePercent < 0 ? 'down' : 'text-gray-400');
+                const holdColorClass = asset.holdingProfit > 0 ? 'up' : (asset.holdingProfit < 0 ? 'down' : 'text-gray-400');
                 const sign = asset.changePercent > 0 ? '+' : '';
+                const holdSign = asset.holdingProfit > 0 ? '+' : '';
                 const tagDisplay = asset.isWatch ? `👀 ${asset.tag}` : asset.tag;
                 let detailUrl = asset.code.includes('sh') || asset.code.includes('sz') ? `https://gu.qq.com/${asset.code}` : `https://fund.eastmoney.com/${asset.code.replace(/[a-zA-Z]/g, '')}.html`;
 
-                // 电脑端表格布局
+                const tradeDataStr = `'${asset.code}', '${asset.name}', ${asset.currentPrice}, ${asset.costPrice || asset.currentPrice}, ${asset.realTimeAmount}`;
+
+                // 电脑端渲染
                 desktopContainer.innerHTML += `
                     <tr class="border-b border-gray-800/50 hover:bg-gray-800/60 transition-colors ${asset.isWatch ? 'opacity-80' : ''}">
                         <td class="p-4"><span class="text-xs px-2 py-1 rounded border ${asset.bg}">${tagDisplay}</span></td>
-                        <td class="p-4 font-semibold text-gray-200">${asset.name}</td>
+                        <td class="p-4 font-semibold text-gray-200"><a href="${detailUrl}" target="_blank" class="hover:text-blue-400 underline decoration-gray-600 underline-offset-4">${asset.name}</a></td>
                         <td class="p-4 font-mono font-bold ${asset.isWatch ? 'text-gray-500' : 'text-blue-300'}">${asset.isWatch ? '---' : asset.realTimeAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <td class="p-4 font-mono ${colorClass}">${asset.currentPrice.toFixed(3)}</td>
                         <td class="p-4 font-bold ${colorClass}">${sign}${asset.changePercent.toFixed(2)}%</td>
                         <td class="p-4 font-mono font-bold ${colorClass}">${asset.isWatch ? '---' : sign+asset.dailyProfit.toFixed(2)}</td>
+                        <td class="p-4 font-mono font-bold ${holdColorClass} bg-gray-900/30">${asset.isWatch ? '---' : holdSign+asset.holdingProfit.toFixed(2)}</td>
                         <td class="p-4">
                             <div class="flex items-center gap-1.5 w-24">
                                 <span class="text-[10px] text-gray-400">${asset.isWatch ? '--' : weightPercent+'%'}</span>
                                 ${!asset.isWatch ? `<div class="flex-1 bg-gray-800 rounded-full h-1 overflow-hidden"><div class="bg-blue-500 h-1 rounded-full" style="width: ${weightPercent}%"></div></div>` : ''}
                             </div>
                         </td>
-                        <td class="p-4"><a href="${detailUrl}" target="_blank" class="text-xs bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded text-gray-300">🔗 详情</a></td>
+                        <td class="p-4 text-center">
+                            <button onclick="openTradeModal(${tradeDataStr})" class="text-xs bg-blue-900/30 text-blue-400 border border-blue-800/50 hover:bg-blue-800/50 px-3 py-1.5 rounded transition">调仓</button>
+                        </td>
                     </tr>
                 `;
 
-                // 手机端卡片布局
+                // 手机端渲染
                 mobileContainer.innerHTML += `
-                    <a href="${detailUrl}" target="_blank" class="flex flex-col justify-between p-4 border-b border-gray-800/60 hover:bg-gray-800/40 block ${asset.isWatch ? 'opacity-80' : ''}">
+                    <div class="flex flex-col justify-between p-4 border-b border-gray-800/60 hover:bg-gray-800/40 block ${asset.isWatch ? 'opacity-80' : ''}">
                         <div class="flex justify-between items-center mb-2">
                             <div class="flex items-center gap-2">
                                 <span class="text-[10px] px-1.5 py-0.5 rounded border ${asset.bg}">${tagDisplay}</span>
-                                <span class="font-bold text-gray-100 text-sm">${asset.name}</span>
+                                <a href="${detailUrl}" target="_blank" class="font-bold text-gray-100 text-[13px] hover:text-blue-400 underline decoration-gray-600 underline-offset-4">${asset.name}</a>
                             </div>
-                            <span class="text-xs text-gray-500">🔗</span>
+                            <button onclick="openTradeModal(${tradeDataStr})" class="text-[11px] bg-blue-900/30 text-blue-400 border border-blue-800/50 px-3 py-1 rounded">调仓</button>
                         </div>
-                        <div class="flex justify-between items-end">
-                            <div>
-                                <div class="text-[10px] text-gray-500 mb-0.5">${asset.isWatch ? '观察标的' : '金额 / 占比'}</div>
-                                <div class="flex items-center gap-2">
-                                    <span class="font-mono ${asset.isWatch ? 'text-gray-500' : 'text-blue-300'} font-bold text-sm">${asset.isWatch ? '---' : '¥'+asset.realTimeAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                                    <span class="text-[10px] text-gray-500">${asset.isWatch ? '' : weightPercent+'%'}</span>
-                                </div>
+                        <div class="flex justify-between items-end mt-3">
+                            <div class="w-1/3">
+                                <div class="text-[10px] text-gray-500 mb-0.5">${asset.isWatch ? '观察标的' : '金额/占比'}</div>
+                                <div class="font-mono ${asset.isWatch ? 'text-gray-500' : 'text-blue-300'} font-bold text-[13px]">${asset.isWatch ? '---' : '¥'+asset.realTimeAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</div>
+                                <div class="text-[10px] text-gray-500">${asset.isWatch ? '' : weightPercent+'%'}</div>
                             </div>
-                            <div class="text-right">
-                                <div class="text-[10px] text-gray-500 mb-0.5">日涨跌</div>
-                                <div class="font-mono font-bold text-sm ${colorClass}">${sign}${asset.changePercent.toFixed(2)}%</div>
+                            <div class="w-1/3 text-right">
+                                <div class="text-[10px] text-gray-500 mb-0.5">净值/涨跌</div>
+                                <div class="font-mono font-bold text-[13px] ${colorClass}">${asset.currentPrice.toFixed(3)}</div>
+                                <div class="font-mono text-xs ${colorClass}">${sign}${asset.changePercent.toFixed(2)}%</div>
                             </div>
-                            <div class="text-right">
-                                <div class="text-[10px] text-gray-500 mb-0.5">今日盈亏</div>
-                                <div class="font-mono font-bold text-sm ${colorClass}">${asset.isWatch ? '---' : sign+asset.dailyProfit.toFixed(2)}</div>
+                            <div class="w-1/3 text-right border-l border-gray-800 pl-2 ml-2">
+                                <div class="text-[10px] text-gray-500 mb-0.5">累计收益</div>
+                                <div class="font-mono font-bold text-[13px] ${holdColorClass}">${asset.isWatch ? '---' : holdSign+asset.holdingProfit.toFixed(2)}</div>
+                                <div class="font-mono text-[10px] text-gray-500">今日 ${asset.isWatch ? '--' : sign+asset.dailyProfit.toFixed(1)}</div>
                             </div>
                         </div>
-                    </a>
+                    </div>
                 `;
             });
 
             document.getElementById('total-asset').innerText = totalAssetValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            
             const profitSign = totalDailyProfit > 0 ? '+' : '';
             const profitColor = totalDailyProfit > 0 ? 'up' : (totalDailyProfit < 0 ? 'down' : 'text-gray-400');
             document.getElementById('total-profit').className = `text-lg font-mono font-bold ${profitColor}`;
             document.getElementById('total-profit').innerText = `${profitSign}¥${totalDailyProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+
+            const holdSign = totalHoldingProfit > 0 ? '+' : '';
+            const holdColor = totalHoldingProfit > 0 ? 'up' : (totalHoldingProfit < 0 ? 'down' : 'text-gray-400');
+            document.getElementById('total-holding-profit').className = `text-lg font-mono font-bold ${holdColor}`;
+            document.getElementById('total-holding-profit').innerText = `${holdSign}¥${totalHoldingProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
             
             const now = new Date();
-            document.getElementById('last-update').innerText = `最后刷新: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            document.getElementById('last-update').innerText = `同步时间: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
         }
 
-        // ⚠️ 请在这里填入你部署成功后的真实 Cloudflare Worker 链接
-        const WORKER_API_URL = 'https://fund-tracker.1239737251.workers.dev/'; 
+        // ================= 防呆调仓引擎 =================
+        function openTradeModal(code, name, price, cost, currentAmt) {
+            currentTradeFund = { code, price, cost, currentAmt };
+            document.getElementById('trade-name').innerText = name;
+            document.getElementById('trade-price').innerText = price.toFixed(3);
+            document.getElementById('trade-cost').innerText = cost.toFixed(3);
+            document.getElementById('trade-current-amt').innerText = '¥' + currentAmt.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('trade-input').value = '';
+            document.getElementById('trade-modal').classList.remove('hidden');
+        }
 
-        async function fetchQuantStrategy() {
-            if (WORKER_API_URL.includes('你的worker名字')) {
-                document.getElementById('strategy-signals').innerHTML = '<li class="text-gray-400 text-xs">⚠️ 请在代码底部配置 Cloudflare URL 以接收量化信号。</li>';
-                document.getElementById('entry-recommendations').innerHTML = '<li class="text-gray-400 text-xs">待接入量化引擎后获取环境分析...</li>';
-                return;
+        function closeTradeModal() {
+            document.getElementById('trade-modal').classList.add('hidden');
+            currentTradeFund = null;
+        }
+
+        // 防呆快捷按键逻辑
+        function setTradePercent(percent) {
+            if (!currentTradeFund) return;
+            const targetAmt = currentTradeFund.currentAmt * percent;
+            document.getElementById('trade-input').value = targetAmt.toFixed(2);
+        }
+
+        function executeTrade(type) {
+            const inputVal = parseFloat(document.getElementById('trade-input').value);
+            if (!inputVal || inputVal <= 0) return alert("❌ 操作中断：输入金额无效。");
+
+            const fundIndex = portfolio.findIndex(f => f.code === currentTradeFund.code);
+            if (fundIndex === -1) return;
+
+            const tradeShares = inputVal / currentTradeFund.price;
+            const currentShares = portfolio[fundIndex].calculatedShares;
+            const currentTotalCost = currentShares * (portfolio[fundIndex].costPrice || currentTradeFund.price);
+
+            if (type === 'buy') {
+                // 平摊成本逻辑：(老份额*老成本 + 新份额*新成本) / 总份额
+                const newCostAmt = inputVal;
+                portfolio[fundIndex].calculatedShares = currentShares + tradeShares;
+                portfolio[fundIndex].costPrice = (currentTotalCost + newCostAmt) / portfolio[fundIndex].calculatedShares;
+                
+                if(portfolio[fundIndex].tag === '关注') {
+                    portfolio[fundIndex].tag = '场内ETF'; 
+                    portfolio[fundIndex].baseAmount = 1; 
+                }
+            } else if (type === 'sell') {
+                if (inputVal > currentTradeFund.currentAmt + 0.1) return alert("❌ 操作中断：卖出金额超出最大持仓限制。");
+                portfolio[fundIndex].calculatedShares = currentShares - tradeShares;
+                // 卖出不改变成本价，只减份额
+                if (portfolio[fundIndex].calculatedShares <= 0.01) {
+                    portfolio[fundIndex].calculatedShares = 0; 
+                    portfolio[fundIndex].costPrice = 0; // 清仓重置
+                    if(portfolio[fundIndex].baseAmount === 1) portfolio[fundIndex].tag = '关注';
+                }
             }
+
+            localStorage.setItem('fund_portfolio_v3', JSON.stringify(portfolio));
+            closeTradeModal();
+            renderList(); 
+        }
+
+        // ================= 量化策略引擎 =================
+        const WORKER_API_URL = 'https://fund-tracker.1239737251.workers.dev/'; 
+        async function fetchQuantStrategy() {
+            if (WORKER_API_URL.includes('你的worker名字')) return;
             try {
                 const response = await fetch(WORKER_API_URL);
                 const data = await response.json();
-                
                 if (data.status === 'success') {
-                    // 核心修复点 1：渲染升级后的精准持仓指令纯文本，增加下划线让多条文本更清晰
-                    document.getElementById('strategy-signals').innerHTML = data.signals.map(sig => 
-                        `<li class="mb-3 border-b border-gray-800/40 pb-3 last:border-0 last:pb-0">${sig}</li>`
-                    ).join('');
-                    
-                    // 核心修复点 2：修复字段名，将原来的 data.recs 改为 data.recommendations
-                    document.getElementById('entry-recommendations').innerHTML = data.recommendations.map(rec => 
-                        `<li class="mb-3 border-b border-gray-800/40 pb-3 last:border-0 last:pb-0">${rec}</li>`
-                    ).join('');
-                } else {
-                    throw new Error(data.error || "量化引擎返回错误状态");
+                    document.getElementById('strategy-signals').innerHTML = data.signals.map(sig => `<li class="mb-3 border-b border-gray-800/40 pb-3 last:border-0 last:pb-0">${sig}</li>`).join('');
+                    document.getElementById('entry-recommendations').innerHTML = data.recommendations.map(rec => `<li class="mb-3 border-b border-gray-800/40 pb-3 last:border-0 last:pb-0">${rec}</li>`).join('');
                 }
-            } catch (error) {
-                console.error("量化策略同步失败:", error);
-                document.getElementById('strategy-signals').innerHTML = '<li class="text-red-400 text-xs">⚠️ 数据同步异常：请检查 Cloudflare 链接部署或跨域配置。</li>';
-                document.getElementById('entry-recommendations').innerHTML = '<li class="text-gray-600 text-xs">无法获取行情分析...</li>';
-            }
+            } catch (error) {}
         }
 
+        // 启动主进程
         fetchRealTimeData();
         fetchQuantStrategy();
         setInterval(fetchRealTimeData, 5000);
