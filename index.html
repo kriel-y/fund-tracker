@@ -6,15 +6,10 @@
     <title>基金追踪 Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .up { color: #ef4444; } /* 红涨 */
-        .down { color: #22c55e; } /* 绿跌 */
-        .glass-panel {
-            background: rgba(17, 24, 39, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(55, 65, 81, 0.5);
-        }
+        .up { color: #ef4444; } 
+        .down { color: #22c55e; } 
+        .glass-panel { background: rgba(17, 24, 39, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(55, 65, 81, 0.5); }
         body { -webkit-tap-highlight-color: transparent; }
-        /* 隐藏滚动条 */
         ::-webkit-scrollbar { display: none; }
     </style>
 </head>
@@ -22,115 +17,99 @@
 
     <div class="max-w-6xl mx-auto space-y-6">
         
-        <!-- 模块 1：🐂 基金追踪 (头部信息) -->
+        <!-- 头部信息 -->
         <header class="flex flex-col md:flex-row md:justify-between md:items-end pb-4 border-b border-gray-800">
             <div>
                 <h1 class="text-3xl font-extrabold flex items-center gap-2 mb-3">
                     🐂 <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">基金追踪</span>
                 </h1>
                 <div class="flex items-baseline gap-3">
-                    <span class="text-gray-400 text-sm">总资产:</span>
+                    <span class="text-gray-400 text-sm">实盘总资产:</span>
                     <span class="text-2xl font-mono font-bold" id="total-asset">⏳ 加载中...</span>
                     <span class="text-gray-400 text-sm ml-4">今日盈亏:</span>
                     <span class="text-lg font-mono font-bold" id="total-profit">--</span>
                 </div>
             </div>
-            <div class="text-xs font-mono text-gray-500 mt-4 md:mt-0" id="last-update">
-                等待系统同步...
-            </div>
+            <div class="text-xs font-mono text-gray-500 mt-4 md:mt-0" id="last-update">等待系统同步...</div>
         </header>
 
-        <!-- 模块 2：📡 大盘指数 -->
+        <!-- 大盘指数 -->
         <div>
             <h2 class="text-lg font-bold text-gray-300 flex items-center gap-2 mb-3">📡 大盘指数</h2>
-            <div class="grid grid-cols-3 gap-3" id="market-indexes">
-                <div class="glass-panel p-3 rounded-xl text-center text-gray-500 text-xs">加载指数中...</div>
-            </div>
+            <div class="grid grid-cols-3 gap-3" id="market-indexes"></div>
         </div>
 
-        <!-- 模块 3：筛选与排序控制栏 -->
+        <!-- 筛选与排序 -->
         <div class="flex flex-col md:flex-row gap-3">
             <select id="sector-filter" class="glass-panel text-sm text-gray-300 rounded p-2 outline-none flex-1 md:flex-none">
-                <option value="">板块(可选) - 全部展示</option>
-                <option value="香港科技">港股科技</option>
-                <option value="科创芯片">芯片半导体</option>
-                <option value="沪深300">沪深300</option>
+                <option value="">所有基金 (持仓 + 关注)</option>
+                <option value="holdings">仅看实盘持仓</option>
+                <option value="关注">仅看关注/观察池</option>
                 <option value="红利低波">红利低波</option>
-                <option value="中证煤炭">中证煤炭</option>
-                <option value="石油天然气">石油天然气</option>
-                <option value="细分化工">细分化工</option>
-                <option value="电网设备">电网设备</option>
-                <option value="场外">混合型(场外)</option>
+                <option value="科创芯片">芯片半导体</option>
             </select>
             
             <select id="sort-select" class="glass-panel text-sm text-gray-300 rounded p-2 outline-none flex-1 md:flex-none">
                 <option value="amount-desc">按金额 (从大到小)</option>
-                <option value="amount-asc">按金额 (从小到大)</option>
                 <option value="profit-desc">今日盈亏 (从高到低)</option>
                 <option value="profit-asc">今日盈亏 (从低到高)</option>
-                <option value="change-desc">日涨跌 (从高到低)</option>
+                <option value="change-desc">日涨跌幅 (从高到低)</option>
             </select>
         </div>
 
-        <!-- 模块 4：核心数据区 (电脑端显示表格，手机端显示卡片) -->
+        <!-- 核心数据区 -->
         <div class="glass-panel rounded-2xl shadow-xl overflow-hidden">
-            
-            <!-- 【电脑端】专属表格布局 (手机端自动隐藏) -->
             <div class="hidden md:block overflow-x-auto">
                 <table class="w-full text-left border-collapse whitespace-nowrap">
                     <thead>
                         <tr class="bg-gray-900/50 text-gray-400 text-sm border-b border-gray-700">
-                            <th class="p-4 font-medium"># 板块</th>
+                            <th class="p-4 font-medium">状态/板块</th>
                             <th class="p-4 font-medium">基金名称</th>
                             <th class="p-4 font-medium">金额 (¥)</th>
-                            <th class="p-4 font-medium">净值</th>
+                            <th class="p-4 font-medium">实时净值</th>
                             <th class="p-4 font-medium">日涨跌 ▼</th>
                             <th class="p-4 font-medium">今日盈亏</th>
-                            <th class="p-4 font-medium">趋势</th>
-                            <th class="p-4 font-medium w-32">占比</th>
-                            <th class="p-4 font-medium">信号</th>
+                            <th class="p-4 font-medium">仓位占比</th>
+                            <th class="p-4 font-medium">操作</th>
                         </tr>
                     </thead>
-                    <tbody id="desktop-list">
-                        <!-- 数据由 JS 填入 -->
-                    </tbody>
+                    <tbody id="desktop-list"></tbody>
                 </table>
             </div>
+            <div class="block md:hidden flex-col" id="mobile-list"></div>
+        </div>
 
-            <!-- 【手机端】专属卡片布局 (电脑端自动隐藏，绝不横向滚动) -->
-            <div class="block md:hidden flex-col" id="mobile-list">
-                <div class="p-10 text-center text-gray-500 font-mono text-sm">加载基金数据...</div>
+        <!-- 策略模块 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- 模块 1：加减仓操作建议 -->
+            <div class="glass-panel rounded-xl p-5 border-l-4 border-l-blue-500">
+                <h3 class="text-blue-400 font-bold mb-3 flex items-center gap-2">
+                    ⚡ 精细化加减仓策略
+                </h3>
+                <ul id="strategy-signals" class="text-gray-300 text-sm leading-relaxed space-y-3">
+                    <li class="animate-pulse">正在进行量价特征比对分析...</li>
+                </ul>
             </div>
-        </div>
-
-        <!-- 模块 5：📡 市场雷达 (对接进场建议) -->
-        <div class="glass-panel rounded-xl p-5 border-l-4 border-l-emerald-500">
-            <h3 class="text-emerald-400 font-bold mb-3 flex items-center gap-2">
-                📡 市场雷达 <span>▼</span>
-            </h3>
-            <ul id="entry-recommendations" class="text-gray-300 text-sm leading-relaxed space-y-2">
-                <li class="animate-pulse">正在解析大盘环境与进场时机...</li>
-            </ul>
-        </div>
-
-        <!-- 模块 6：🧠 策略建议 (对接加减仓信号) -->
-        <div class="glass-panel rounded-xl p-5 border-l-4 border-l-purple-500">
-            <h3 class="text-purple-400 font-bold mb-3 flex items-center gap-2">
-                🧠 策略建议 <span>▼</span>
-            </h3>
-            <ul id="strategy-signals" class="text-gray-300 text-sm leading-relaxed space-y-2">
-                <li class="animate-pulse">正在连接量化引擎评估阈值...</li>
-            </ul>
+            
+            <!-- 模块 2：外部基金推荐 -->
+            <div class="glass-panel rounded-xl p-5 border-l-4 border-l-emerald-500">
+                <h3 class="text-emerald-400 font-bold mb-3 flex items-center gap-2">
+                    🎯 外部基金进场推荐
+                </h3>
+                <ul id="entry-recommendations" class="text-gray-300 text-sm leading-relaxed space-y-3">
+                    <li class="animate-pulse">正在扫描全市场宏观资产...</li>
+                </ul>
+            </div>
         </div>
 
     </div>
 
     <script>
-        // 大盘指数代码
         const indexCodes = ['sh000001', 'sz399001', 'sz399006'];
 
-        // 真实持仓
+        // 包含你的真实持仓，以及金额为0的“关注基金”
         const portfolio = [
+            // --- 你的实盘持仓 ---
             { code: 'sh588260', tag: '科创芯片', name: '天弘科创芯片设计ETF', baseAmount: 5863.43, bg: 'bg-indigo-900/40 text-indigo-300 border-indigo-700/50' },
             { code: 'sh513020', tag: '香港科技', name: '国泰中证香港科技ETF', baseAmount: 4678.54, bg: 'bg-blue-900/40 text-blue-300 border-blue-700/50' },
             { code: 'sh515220', tag: '中证煤炭', name: '国泰中证煤炭ETF', baseAmount: 4237.67, bg: 'bg-stone-800 text-stone-300 border-stone-600/50' },
@@ -141,14 +120,18 @@
             { code: 'sz160616', tag: '石油天然气', name: '鹏华国证石油天然气LOF', baseAmount: 2472.12, bg: 'bg-yellow-900/40 text-yellow-300 border-yellow-700/50' },
             { code: 'sh560060', tag: '电网设备', name: '华夏中证电网设备ETF', baseAmount: 2398.66, bg: 'bg-teal-900/40 text-teal-300 border-teal-700/50' },
             { code: 'sz399395', tag: '场外', name: '富国资源精选混合C', baseAmount: 2218.29, bg: 'bg-gray-800 text-gray-400 border-gray-600' },
-            { code: 'sh000001', tag: '场外', name: '永赢锐见成长混合C', baseAmount: 864.04, bg: 'bg-gray-800 text-gray-400 border-gray-600' }
+            { code: 'sh000001', tag: '场外', name: '永赢锐见成长混合C', baseAmount: 864.04, bg: 'bg-gray-800 text-gray-400 border-gray-600' },
+            
+            // --- 关注基金池 (金额设为0，系统自动识别) ---
+            { code: 'sh518880', tag: '关注', name: '华安黄金ETF (防守对冲)', baseAmount: 0, bg: 'bg-yellow-900/40 text-yellow-300 border-yellow-700/50' },
+            { code: 'sh513100', tag: '关注', name: '国泰纳斯达克100 (海外配置)', baseAmount: 0, bg: 'bg-purple-900/40 text-purple-300 border-purple-700/50' },
+            { code: 'sh511260', tag: '关注', name: '十年期国债ETF (无风险底仓)', baseAmount: 0, bg: 'bg-emerald-900/40 text-emerald-300 border-emerald-700/50' }
         ];
 
         let isInitialized = false;
         let currentSort = 'amount-desc';
         let currentSector = '';
 
-        // 监听筛选和排序
         document.getElementById('sort-select').addEventListener('change', (e) => { currentSort = e.target.value; renderList(); });
         document.getElementById('sector-filter').addEventListener('change', (e) => { currentSector = e.target.value; renderList(); });
 
@@ -156,34 +139,24 @@
             const queryCodes = [...indexCodes, ...portfolio.map(item => item.code)].join(',');
             const script = document.createElement('script');
             script.src = `https://qt.gtimg.cn/q=${queryCodes}&t=${new Date().getTime()}`;
-            
-            script.onload = () => {
-                renderIndexes();
-                renderList();
-                document.head.removeChild(script); 
-            };
+            script.onload = () => { renderIndexes(); renderList(); document.head.removeChild(script); };
             document.head.appendChild(script);
         }
 
         function renderIndexes() {
             const indexContainer = document.getElementById('market-indexes');
             indexContainer.innerHTML = '';
-            
             indexCodes.forEach(code => {
                 const rawData = window[`v_${code}`];
                 if (!rawData) return;
                 const fields = rawData.split('~');
-                const name = fields[1];
-                const price = parseFloat(fields[3]).toFixed(2);
                 const changePercent = parseFloat(fields[32]);
                 const colorClass = changePercent > 0 ? 'up' : (changePercent < 0 ? 'down' : 'text-gray-400');
-                const sign = changePercent > 0 ? '+' : '';
-
                 indexContainer.innerHTML += `
                     <a href="https://gu.qq.com/${code}" target="_blank" class="bg-gray-900/50 p-2 md:p-3 rounded-lg flex flex-col items-center justify-center hover:bg-gray-800 transition-colors border border-gray-800">
-                        <span class="text-[10px] md:text-xs text-gray-400 mb-1">${name}</span>
-                        <span class="font-mono font-bold text-sm md:text-base ${colorClass}">${price}</span>
-                        <span class="font-mono text-[10px] md:text-xs ${colorClass}">${sign}${changePercent.toFixed(2)}%</span>
+                        <span class="text-[10px] md:text-xs text-gray-400 mb-1">${fields[1]}</span>
+                        <span class="font-mono font-bold text-sm md:text-base ${colorClass}">${parseFloat(fields[3]).toFixed(2)}</span>
+                        <span class="font-mono text-[10px] md:text-xs ${colorClass}">${changePercent > 0 ? '+' : ''}${changePercent.toFixed(2)}%</span>
                     </a>
                 `;
             });
@@ -194,7 +167,6 @@
             let totalDailyProfit = 0;
             let updatedPortfolio = [];
 
-            // 1. 数据计算与推算
             portfolio.forEach(asset => {
                 const rawData = window[`v_${asset.code}`];
                 if (!rawData) return;
@@ -205,31 +177,36 @@
 
                 if (!isInitialized) {
                     const basePrice = (asset.tag === '场外') ? (currentPrice - priceChange) : currentPrice;
-                    asset.calculatedShares = asset.baseAmount / (basePrice || 1);
+                    asset.calculatedShares = asset.baseAmount === 0 ? 0 : (asset.baseAmount / (basePrice || 1));
                 }
 
                 const realTimeAmount = asset.calculatedShares * currentPrice;
                 const dailyProfit = asset.calculatedShares * priceChange;
 
-                totalAssetValue += realTimeAmount;
-                totalDailyProfit += dailyProfit;
+                // 只有持有金额大于0的才计入总资产
+                if (asset.baseAmount > 0) {
+                    totalAssetValue += realTimeAmount;
+                    totalDailyProfit += dailyProfit;
+                }
 
                 updatedPortfolio.push({
-                    ...asset, currentPrice, priceChange, changePercent, realTimeAmount, dailyProfit
+                    ...asset, currentPrice, priceChange, changePercent, realTimeAmount, dailyProfit, isWatch: asset.baseAmount === 0
                 });
             });
 
             isInitialized = true; 
 
-            // 2. 执行筛选
-            if (currentSector) {
+            if (currentSector === 'holdings') {
+                updatedPortfolio = updatedPortfolio.filter(a => !a.isWatch);
+            } else if (currentSector) {
                 updatedPortfolio = updatedPortfolio.filter(a => a.tag === currentSector);
             }
 
-            // 3. 执行排序
             updatedPortfolio.sort((a, b) => {
+                // 强制把关注的基金放在列表最下面
+                if (a.isWatch !== b.isWatch) return a.isWatch ? 1 : -1;
+                
                 if (currentSort === 'amount-desc') return b.realTimeAmount - a.realTimeAmount;
-                if (currentSort === 'amount-asc') return a.realTimeAmount - b.realTimeAmount;
                 if (currentSort === 'profit-desc') return b.dailyProfit - a.dailyProfit;
                 if (currentSort === 'profit-asc') return a.dailyProfit - b.dailyProfit;
                 if (currentSort === 'change-desc') return b.changePercent - a.changePercent;
@@ -241,52 +218,48 @@
             desktopContainer.innerHTML = '';
             mobileContainer.innerHTML = '';
 
-            // 4. 双引擎渲染 UI
             updatedPortfolio.forEach(asset => {
-                const weightPercent = ((asset.realTimeAmount / totalAssetValue) * 100).toFixed(2);
+                const weightPercent = asset.isWatch ? '0.00' : ((asset.realTimeAmount / totalAssetValue) * 100).toFixed(2);
                 const colorClass = asset.changePercent > 0 ? 'up' : (asset.changePercent < 0 ? 'down' : 'text-gray-400');
                 const sign = asset.changePercent > 0 ? '+' : '';
-                const trendIcon = asset.changePercent > 0 ? '📈' : (asset.changePercent < 0 ? '📉' : '➖');
-                
-                let detailUrl = asset.code.includes('sh') || asset.code.includes('sz') 
-                    ? `https://gu.qq.com/${asset.code}` : `https://fund.eastmoney.com/${asset.code.replace(/[a-zA-Z]/g, '')}.html`;
+                const tagDisplay = asset.isWatch ? `👀 ${asset.tag}` : asset.tag;
+                let detailUrl = asset.code.includes('sh') || asset.code.includes('sz') ? `https://gu.qq.com/${asset.code}` : `https://fund.eastmoney.com/${asset.code.replace(/[a-zA-Z]/g, '')}.html`;
 
-                // 【电脑端】经典表格渲染
+                // 电脑端渲染
                 desktopContainer.innerHTML += `
-                    <tr class="border-b border-gray-800/50 hover:bg-gray-800/60 transition-colors">
-                        <td class="p-4"><span class="text-xs px-2 py-1 rounded border ${asset.bg}">${asset.tag}</span></td>
+                    <tr class="border-b border-gray-800/50 hover:bg-gray-800/60 transition-colors ${asset.isWatch ? 'opacity-80' : ''}">
+                        <td class="p-4"><span class="text-xs px-2 py-1 rounded border ${asset.bg}">${tagDisplay}</span></td>
                         <td class="p-4 font-semibold text-gray-200">${asset.name}</td>
-                        <td class="p-4 font-mono font-bold text-blue-300">${asset.realTimeAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                        <td class="p-4 font-mono font-bold ${asset.isWatch ? 'text-gray-500' : 'text-blue-300'}">${asset.isWatch ? '---' : asset.realTimeAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                         <td class="p-4 font-mono ${colorClass}">${asset.currentPrice.toFixed(3)}</td>
                         <td class="p-4 font-bold ${colorClass}">${sign}${asset.changePercent.toFixed(2)}%</td>
-                        <td class="p-4 font-mono font-bold ${colorClass}">${sign}${asset.dailyProfit.toFixed(2)}</td>
-                        <td class="p-4">${trendIcon}</td>
+                        <td class="p-4 font-mono font-bold ${colorClass}">${asset.isWatch ? '---' : sign+asset.dailyProfit.toFixed(2)}</td>
                         <td class="p-4">
                             <div class="flex items-center gap-1.5 w-24">
-                                <span class="text-[10px] text-gray-400">${weightPercent}%</span>
-                                <div class="flex-1 bg-gray-800 rounded-full h-1 overflow-hidden"><div class="bg-blue-500 h-1 rounded-full" style="width: ${weightPercent}%"></div></div>
+                                <span class="text-[10px] text-gray-400">${asset.isWatch ? '--' : weightPercent+'%'}</span>
+                                ${!asset.isWatch ? `<div class="flex-1 bg-gray-800 rounded-full h-1 overflow-hidden"><div class="bg-blue-500 h-1 rounded-full" style="width: ${weightPercent}%"></div></div>` : ''}
                             </div>
                         </td>
                         <td class="p-4"><a href="${detailUrl}" target="_blank" class="text-xs bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded text-gray-300">🔗 详情</a></td>
                     </tr>
                 `;
 
-                // 【手机端】防滚动卡片渲染
+                // 手机端渲染
                 mobileContainer.innerHTML += `
-                    <a href="${detailUrl}" target="_blank" class="flex flex-col justify-between p-4 border-b border-gray-800/60 hover:bg-gray-800/40 block">
+                    <a href="${detailUrl}" target="_blank" class="flex flex-col justify-between p-4 border-b border-gray-800/60 hover:bg-gray-800/40 block ${asset.isWatch ? 'opacity-80' : ''}">
                         <div class="flex justify-between items-center mb-2">
                             <div class="flex items-center gap-2">
-                                <span class="text-[10px] px-1.5 py-0.5 rounded border ${asset.bg}">${asset.tag}</span>
+                                <span class="text-[10px] px-1.5 py-0.5 rounded border ${asset.bg}">${tagDisplay}</span>
                                 <span class="font-bold text-gray-100 text-sm">${asset.name}</span>
                             </div>
                             <span class="text-xs text-gray-500">🔗</span>
                         </div>
                         <div class="flex justify-between items-end">
                             <div>
-                                <div class="text-[10px] text-gray-500 mb-0.5">金额 / 占比</div>
+                                <div class="text-[10px] text-gray-500 mb-0.5">${asset.isWatch ? '观察标的' : '金额 / 占比'}</div>
                                 <div class="flex items-center gap-2">
-                                    <span class="font-mono text-blue-300 font-bold text-sm">¥${asset.realTimeAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
-                                    <span class="text-[10px] text-gray-500">${weightPercent}%</span>
+                                    <span class="font-mono ${asset.isWatch ? 'text-gray-500' : 'text-blue-300'} font-bold text-sm">${asset.isWatch ? '---' : '¥'+asset.realTimeAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                    <span class="text-[10px] text-gray-500">${asset.isWatch ? '' : weightPercent+'%'}</span>
                                 </div>
                             </div>
                             <div class="text-right">
@@ -295,30 +268,29 @@
                             </div>
                             <div class="text-right">
                                 <div class="text-[10px] text-gray-500 mb-0.5">今日盈亏</div>
-                                <div class="font-mono font-bold text-sm ${colorClass}">${sign}${asset.dailyProfit.toFixed(2)}</div>
+                                <div class="font-mono font-bold text-sm ${colorClass}">${asset.isWatch ? '---' : sign+asset.dailyProfit.toFixed(2)}</div>
                             </div>
                         </div>
                     </a>
                 `;
             });
 
-            // 更新头部汇总
             document.getElementById('total-asset').innerText = totalAssetValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             const profitSign = totalDailyProfit > 0 ? '+' : '';
             const profitColor = totalDailyProfit > 0 ? 'up' : (totalDailyProfit < 0 ? 'down' : 'text-gray-400');
             document.getElementById('total-profit').className = `text-lg font-mono font-bold ${profitColor}`;
             document.getElementById('total-profit').innerText = `${profitSign}¥${totalDailyProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-
+            
             const now = new Date();
-            document.getElementById('last-update').innerText = `最后刷新: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            document.getElementById('last-update').innerText = `更新于: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
         }
 
-        // ⚠️ 请在这里填入你的 Cloudflare Worker 链接
+        // ⚠️ 请填入新版 Cloudflare Worker 链接
         const WORKER_API_URL = 'https://fund-tracker.1239737251.workers.dev/'; 
 
         async function fetchQuantStrategy() {
             if (WORKER_API_URL.includes('你的worker名字')) {
-                document.getElementById('strategy-signals').innerHTML = '<li class="text-gray-400 text-xs">⚠️ 请在代码底部配置 Cloudflare URL 以接收量化信号。</li>';
+                document.getElementById('strategy-signals').innerHTML = '<li class="text-gray-400 text-xs">⚠️ 请配置 Cloudflare URL 激活高阶量价分析引擎。</li>';
                 document.getElementById('entry-recommendations').innerHTML = '<li class="text-gray-400 text-xs">⚠️ 未连接量化引擎。</li>';
                 return;
             }
@@ -327,11 +299,9 @@
                 const data = await response.json();
                 if (data.status === 'success') {
                     document.getElementById('strategy-signals').innerHTML = data.signals.map(sig => `<li>${sig.text}</li>`).join('');
-                    document.getElementById('entry-recommendations').innerHTML = data.recommendations.map(rec => `<li>${rec.text}</li>`).join('');
+                    document.getElementById('entry-recommendations').innerHTML = data.recs.map(rec => `<li>${rec.text}</li>`).join('');
                 }
-            } catch (error) {
-                document.getElementById('strategy-signals').innerHTML = '<li class="text-red-400">连接超时，请检查网络。</li>';
-            }
+            } catch (error) {}
         }
 
         fetchRealTimeData();
