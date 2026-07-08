@@ -2,72 +2,68 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nora 的全天候投资看板 - 实时盈亏</title>
+    <!-- 增加 user-scalable=no 彻底禁止手机端双击放大或意外缩放，提供媲美原生APP的体验 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nora 的专属投资看板</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .up { color: #ef4444; } 
-        .down { color: #22c55e; } 
+        .up { color: #ef4444; } /* 红色上涨 */
+        .down { color: #22c55e; } /* 绿色下跌 */
         .glass-panel {
             background: rgba(17, 24, 39, 0.85);
             backdrop-filter: blur(12px);
             border: 1px solid rgba(55, 65, 81, 0.5);
         }
-        ::-webkit-scrollbar { display: none; } 
+        body { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
-<body class="bg-gray-950 text-gray-200 font-sans p-4 md:p-8 min-h-screen bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+<body class="bg-gray-950 text-gray-200 font-sans min-h-screen bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] p-3 md:p-8">
 
-    <div class="max-w-7xl mx-auto">
-        <!-- 头部资产汇总 -->
-        <header class="flex flex-col md:flex-row md:justify-between md:items-end mb-8 border-b border-gray-800 pb-4 gap-4">
-            <div>
-                <h1 class="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-emerald-400 tracking-tight mb-2">
+    <div class="max-w-4xl mx-auto">
+        <!-- 头部资产汇总 (自动适配手机屏幕居中对齐) -->
+        <header class="flex flex-col items-center md:flex-row md:justify-between md:items-end mb-6 pb-6 border-b border-gray-800/80 gap-4 mt-2 md:mt-0">
+            <div class="text-center md:text-left w-full">
+                <h1 class="text-2xl md:text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-emerald-400 tracking-tight mb-4">
                     Nora's Portfolio
                 </h1>
-                <div class="flex items-baseline gap-4 mt-2">
-                    <span class="text-gray-400 text-sm">动态总资产:</span>
-                    <span class="text-3xl font-mono font-bold text-gray-100">¥ <span id="total-asset">36,772.71</span></span>
+                
+                <div class="flex flex-col items-center md:items-start gap-1">
+                    <span class="text-gray-500 text-xs">实时预估总资产 (¥)</span>
+                    <span class="text-4xl font-mono font-bold text-gray-100" id="total-asset">36,772.71</span>
                 </div>
-                <div class="flex items-baseline gap-4 mt-1">
-                    <span class="text-gray-400 text-sm">今日总盈亏:</span>
-                    <span class="text-xl font-mono font-bold" id="total-profit">--</span>
+                
+                <div class="flex justify-center md:justify-start gap-6 mt-4 bg-gray-900/50 rounded-xl p-3 border border-gray-800">
+                    <div class="flex flex-col items-center md:items-start">
+                        <span class="text-gray-500 text-[11px]">今日总盈亏</span>
+                        <span class="text-lg font-mono font-bold" id="total-profit">--</span>
+                    </div>
+                    <div class="w-px bg-gray-700"></div>
+                    <div class="flex flex-col items-center md:items-start">
+                        <span class="text-gray-500 text-[11px]">数据同步状态</span>
+                        <span class="text-sm font-mono text-emerald-400 mt-1 flex items-center gap-1" id="last-update">
+                            <span class="animate-spin inline-block text-xs">↻</span> 连接中
+                        </span>
+                    </div>
                 </div>
-            </div>
-            <div class="text-sm font-mono text-blue-400 bg-blue-900/20 px-4 py-2 rounded-lg border border-blue-800/50 flex items-center gap-2" id="last-update">
-                <span class="animate-spin inline-block">↻</span> 数据同步中...
             </div>
         </header>
 
-        <!-- 核心持仓列表 -->
+        <!-- 核心持仓列表 (摒弃 Table，采用移动端友好的 Flex 卡片流) -->
         <div class="glass-panel rounded-2xl shadow-2xl overflow-hidden mb-8">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse whitespace-nowrap">
-                    <thead>
-                        <tr class="bg-gray-800/60 text-gray-400 text-sm tracking-wider border-b border-gray-700">
-                            <th class="p-4 font-medium">板块</th>
-                            <th class="p-4 font-medium">产品名称</th>
-                            <th class="p-4 font-medium text-gray-500">推算份额</th>
-                            <th class="p-4 font-medium text-blue-300">实时金额 (¥)</th>
-                            <th class="p-4 font-medium">仓位占比</th>
-                            <th class="p-4 font-medium">当前报价</th>
-                            <th class="p-4 font-medium">日内涨幅</th>
-                            <th class="p-4 font-medium text-orange-300">今日盈亏 (¥)</th>
-                        </tr>
-                    </thead>
-                    <tbody id="fund-list">
-                        <tr><td colspan="8" class="p-10 text-center text-gray-500 font-mono">📡 正在初始化您的专属资产数据...</td></tr>
-                    </tbody>
-                </table>
+            <!-- 列表容器 -->
+            <div id="fund-list" class="flex flex-col">
+                <div class="p-10 text-center text-gray-500 font-mono text-sm">
+                    📡 正在初始化您的专属资产数据...<br><span class="text-xs text-gray-600 mt-2 block">首次加载会根据截图金额自动推算份额</span>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // 已经完美填入你截图中的准确金额数据
+        // 核心资产池：严格对应截图中的11只基金与金额
         const portfolio = [
             { code: 'sh588260', tag: '科创芯片', name: '天弘科创芯片设计ETF', baseAmount: 5863.43, bg: 'bg-indigo-900/40 text-indigo-300 border-indigo-700/50' },
-            { code: 'sh513020', tag: '香港科技', name: '国泰海通中证香港科技ETF', baseAmount: 4678.54, bg: 'bg-blue-900/40 text-blue-300 border-blue-700/50' },
+            { code: 'sh513020', tag: '香港科技', name: '国泰中证香港科技ETF', baseAmount: 4678.54, bg: 'bg-blue-900/40 text-blue-300 border-blue-700/50' },
             { code: 'sh515220', tag: '中证煤炭', name: '国泰中证煤炭ETF', baseAmount: 4237.67, bg: 'bg-stone-800 text-stone-300 border-stone-600/50' },
             { code: 'sh515660', tag: '沪深300', name: '国联安沪深300ETF', baseAmount: 3900.74, bg: 'bg-red-900/40 text-red-300 border-red-700/50' },
             { code: 'sz159870', tag: '细分化工', name: '天弘中证细分化工ETF', baseAmount: 3838.11, bg: 'bg-fuchsia-900/40 text-fuchsia-300 border-fuchsia-700/50' },
@@ -87,39 +83,37 @@
             script.src = `https://qt.gtimg.cn/q=${queryCodes}&t=${new Date().getTime()}`;
             
             script.onload = () => {
-                renderTable();
+                renderList();
                 document.head.removeChild(script); 
             };
             document.head.appendChild(script);
         }
 
-        function renderTable() {
-            const tbody = document.getElementById('fund-list');
-            tbody.innerHTML = ''; 
+        function renderList() {
+            const listContainer = document.getElementById('fund-list');
+            listContainer.innerHTML = ''; 
 
             let totalAssetValue = 0;
             let totalDailyProfit = 0;
             const updatedPortfolio = [];
 
-            // 数据处理逻辑
+            // 数据处理与份额反推逻辑
             portfolio.forEach(asset => {
                 const rawData = window[`v_${asset.code}`];
                 if (!rawData) return;
 
                 const fields = rawData.split('~');
-                const currentPrice = parseFloat(fields[3]); // 实时价格
-                const priceChange = parseFloat(fields[31]); // 涨跌额
-                const changePercent = parseFloat(fields[32]); // 涨跌幅%
+                const currentPrice = parseFloat(fields[3]); 
+                const priceChange = parseFloat(fields[31]); 
+                const changePercent = parseFloat(fields[32]); 
 
-                // 核心：第一次加载时，利用初始金额自动逆向推算份额并锁定
+                // 首次加载时锁定份额
                 if (!isInitialized) {
-                    // 对于场外基金，我们用昨天的模拟收盘价推算，保证金额大致准确
                     const basePrice = (asset.code === 'sh000001' || asset.code === 'sz399395') 
                                       ? (currentPrice - priceChange) : currentPrice;
                     asset.calculatedShares = asset.baseAmount / (basePrice || 1);
                 }
 
-                // 实时资产 = 锁定的份额 × 实时报价
                 const realTimeAmount = asset.calculatedShares * currentPrice;
                 const dailyProfit = asset.calculatedShares * priceChange;
 
@@ -132,36 +126,52 @@
                 });
             });
 
-            isInitialized = true; // 锁定份额，防止以后金额不会随价格变动
+            isInitialized = true; 
 
-            // 渲染表格 (按实时金额降序排序)
+            // 生成移动端卡片布局
             updatedPortfolio.sort((a, b) => b.realTimeAmount - a.realTimeAmount).forEach(asset => {
                 const weightPercent = ((asset.realTimeAmount / totalAssetValue) * 100).toFixed(2);
                 const colorClass = asset.changePercent > 0 ? 'up' : (asset.changePercent < 0 ? 'down' : 'text-gray-400');
                 const sign = asset.changePercent > 0 ? '+' : '';
 
-                const tr = document.createElement('tr');
-                tr.className = "border-b border-gray-800/50 hover:bg-gray-800/60 transition-colors duration-200";
-                tr.innerHTML = `
-                    <td class="p-4">
-                        <span class="text-xs px-2 py-1 rounded border ${asset.bg} font-medium tracking-wide shadow-sm">${asset.tag}</span>
-                    </td>
-                    <td class="p-4 font-semibold text-gray-200">${asset.name}</td>
-                    <td class="p-4 font-mono text-gray-500 text-sm">${asset.calculatedShares.toFixed(2)}</td>
-                    <td class="p-4 font-mono text-blue-300 font-bold bg-blue-900/10">${asset.realTimeAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                    <td class="p-4">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs text-gray-400 font-mono w-10">${weightPercent}%</span>
-                            <div class="w-16 bg-gray-700 rounded-full h-1.5 overflow-hidden">
-                                <div class="bg-blue-400 h-1.5 rounded-full" style="width: ${weightPercent}%"></div>
+                const itemDiv = document.createElement('div');
+                itemDiv.className = "flex flex-col md:flex-row justify-between p-4 md:px-6 border-b border-gray-800/60 hover:bg-gray-800/40 transition-colors";
+                
+                itemDiv.innerHTML = `
+                    <!-- 左侧/上方：资产名称与金额 -->
+                    <div class="flex flex-col justify-center mb-3 md:mb-0 md:w-5/12">
+                        <div class="flex items-center gap-2 mb-1.5">
+                            <span class="font-bold text-gray-100 text-[15px] tracking-wide">${asset.name}</span>
+                            <span class="text-[10px] px-1.5 py-0.5 rounded border ${asset.bg} font-medium whitespace-nowrap">${asset.tag}</span>
+                        </div>
+                        <div class="flex items-center gap-3 text-xs text-gray-500 font-mono">
+                            <span class="text-gray-300 font-semibold">¥${asset.realTimeAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                            <div class="flex items-center gap-1.5 w-24 opacity-80">
+                                <span>${weightPercent}%</span>
+                                <div class="flex-1 bg-gray-800 rounded-full h-1 overflow-hidden">
+                                    <div class="bg-blue-500 h-1 rounded-full" style="width: ${weightPercent}%"></div>
+                                </div>
                             </div>
                         </div>
-                    </td>
-                    <td class="p-4 text-sm font-bold ${colorClass}">${asset.currentPrice.toFixed(3)}</td>
-                    <td class="p-4 font-bold ${colorClass}">${sign}${asset.changePercent.toFixed(2)}%</td>
-                    <td class="p-4 font-mono font-bold ${colorClass} bg-gray-900/20">${sign}${asset.dailyProfit.toFixed(2)}</td>
+                    </div>
+
+                    <!-- 右侧/下方：实时行情数据 -->
+                    <div class="flex justify-between md:w-7/12 md:justify-end md:gap-10 items-end md:items-center">
+                        <div class="text-left md:text-right">
+                            <div class="text-[11px] text-gray-500 mb-1">最新净值</div>
+                            <div class="font-mono font-bold text-sm ${colorClass}">${asset.currentPrice.toFixed(3)}</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-[11px] text-gray-500 mb-1">日内涨跌</div>
+                            <div class="font-mono font-bold text-sm ${colorClass}">${sign}${asset.changePercent.toFixed(2)}%</div>
+                        </div>
+                        <div class="text-right min-w-[70px]">
+                            <div class="text-[11px] text-gray-500 mb-1">今日盈亏</div>
+                            <div class="font-mono font-bold text-[15px] ${colorClass}">${sign}${asset.dailyProfit.toFixed(2)}</div>
+                        </div>
+                    </div>
                 `;
-                tbody.appendChild(tr);
+                listContainer.appendChild(itemDiv);
             });
 
             // 更新头部汇总
@@ -173,7 +183,10 @@
             document.getElementById('total-profit').innerText = `${profitSign}¥${totalDailyProfit.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
 
             const now = new Date();
-            document.getElementById('last-update').innerHTML = `<span class="text-emerald-400">●</span> 同步时间: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            document.getElementById('last-update').innerHTML = `
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}
+            `;
         }
 
         fetchRealTimeData();
