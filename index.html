@@ -26,8 +26,8 @@
                     Nora's Portfolio
                 </h1>
                 <div class="flex items-baseline gap-4 mt-2">
-                    <span class="text-gray-400 text-sm">实时总资产:</span>
-                    <span class="text-3xl font-mono font-bold text-gray-100">¥ <span id="total-asset">--</span></span>
+                    <span class="text-gray-400 text-sm">动态总资产:</span>
+                    <span class="text-3xl font-mono font-bold text-gray-100">¥ <span id="total-asset">36,772.71</span></span>
                 </div>
                 <div class="flex items-baseline gap-4 mt-1">
                     <span class="text-gray-400 text-sm">今日总盈亏:</span>
@@ -47,7 +47,7 @@
                         <tr class="bg-gray-800/60 text-gray-400 text-sm tracking-wider border-b border-gray-700">
                             <th class="p-4 font-medium">板块</th>
                             <th class="p-4 font-medium">产品名称</th>
-                            <th class="p-4 font-medium">持有份额</th>
+                            <th class="p-4 font-medium text-gray-500">推算份额</th>
                             <th class="p-4 font-medium text-blue-300">实时金额 (¥)</th>
                             <th class="p-4 font-medium">仓位占比</th>
                             <th class="p-4 font-medium">当前报价</th>
@@ -56,7 +56,7 @@
                         </tr>
                     </thead>
                     <tbody id="fund-list">
-                        <tr><td colspan="8" class="p-10 text-center text-gray-500 font-mono">📡 正在计算实时动态资产...</td></tr>
+                        <tr><td colspan="8" class="p-10 text-center text-gray-500 font-mono">📡 正在初始化您的专属资产数据...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -64,24 +64,22 @@
     </div>
 
     <script>
-        // 【注意】请将下面的 shares 替换为你真实持有的“份额”数字！
-        // 只有填入准确的份额，金额才能随着每天的价格波动自动计算。
-        // 这里我先填入了一些估算的测试份额。
+        // 已经完美填入你截图中的准确金额数据
         const portfolio = [
-            { code: 'sh588260', tag: '科创芯片', name: '天弘科创芯片设计ETF', type: 'ETF', shares: 5000, bg: 'bg-indigo-900/40 text-indigo-300 border-indigo-700/50' },
-            { code: 'sh513020', tag: '香港科技', name: '国泰中证香港科技ETF', type: 'ETF', shares: 4500, bg: 'bg-blue-900/40 text-blue-300 border-blue-700/50' },
-            { code: 'sh515220', tag: '中证煤炭', name: '国泰中证煤炭ETF', type: 'ETF', shares: 3800, bg: 'bg-stone-800 text-stone-300 border-stone-600/50' },
-            { code: 'sh515660', tag: '沪深300', name: '国联安沪深300ETF', type: 'ETF', shares: 3500, bg: 'bg-red-900/40 text-red-300 border-red-700/50' },
-            { code: 'sz159870', tag: '细分化工', name: '天弘中证细分化工', type: 'ETF', shares: 4000, bg: 'bg-fuchsia-900/40 text-fuchsia-300 border-fuchsia-700/50' },
-            { code: 'sh563020', tag: '红利低波', name: '易方达中证红利低波动', type: 'ETF', shares: 3000, bg: 'bg-orange-900/40 text-orange-300 border-orange-700/50' },
-            { code: 'sh515450', tag: '红利低波', name: '南方标普红利低波50', type: 'ETF', shares: 2500, bg: 'bg-orange-900/40 text-orange-300 border-orange-700/50' },
-            { code: 'sz160616', tag: '石油天然气', name: '鹏华国证油气LOF', type: 'LOF', shares: 2000, bg: 'bg-yellow-900/40 text-yellow-300 border-yellow-700/50' },
-            { code: 'sh560060', tag: '电网设备', name: '华夏中证电网设备ETF', type: 'ETF', shares: 2200, bg: 'bg-teal-900/40 text-teal-300 border-teal-700/50' },
-            
-            // 场外基金的净值是盘后更新，盘中我们用昨日净值估算
-            { code: 'sz399395', tag: '锂矿(场外)', name: '富国资源精选C(趋势)', type: '平替', shares: 2000, bg: 'bg-gray-800 text-gray-400 border-gray-600' },
-            { code: 'sh000001', tag: '成长(场外)', name: '永赢锐见成长C(趋势)', type: '平替', shares: 1000, bg: 'bg-gray-800 text-gray-400 border-gray-600' }
+            { code: 'sh588260', tag: '科创芯片', name: '天弘科创芯片设计ETF', baseAmount: 5863.43, bg: 'bg-indigo-900/40 text-indigo-300 border-indigo-700/50' },
+            { code: 'sh513020', tag: '香港科技', name: '国泰海通中证香港科技ETF', baseAmount: 4678.54, bg: 'bg-blue-900/40 text-blue-300 border-blue-700/50' },
+            { code: 'sh515220', tag: '中证煤炭', name: '国泰中证煤炭ETF', baseAmount: 4237.67, bg: 'bg-stone-800 text-stone-300 border-stone-600/50' },
+            { code: 'sh515660', tag: '沪深300', name: '国联安沪深300ETF', baseAmount: 3900.74, bg: 'bg-red-900/40 text-red-300 border-red-700/50' },
+            { code: 'sz159870', tag: '细分化工', name: '天弘中证细分化工ETF', baseAmount: 3838.11, bg: 'bg-fuchsia-900/40 text-fuchsia-300 border-fuchsia-700/50' },
+            { code: 'sh563020', tag: '红利低波', name: '易方达中证红利低波动', baseAmount: 3462.44, bg: 'bg-orange-900/40 text-orange-300 border-orange-700/50' },
+            { code: 'sh515450', tag: '红利低波', name: '南方红利低波50ETF', baseAmount: 2838.66, bg: 'bg-orange-900/40 text-orange-300 border-orange-700/50' },
+            { code: 'sz160616', tag: '石油天然气', name: '鹏华国证石油天然气LOF', baseAmount: 2472.12, bg: 'bg-yellow-900/40 text-yellow-300 border-yellow-700/50' },
+            { code: 'sh560060', tag: '电网设备', name: '华夏中证电网设备ETF', baseAmount: 2398.66, bg: 'bg-teal-900/40 text-teal-300 border-teal-700/50' },
+            { code: 'sz399395', tag: '锂矿(场外)', name: '富国资源精选混合C', baseAmount: 2218.29, bg: 'bg-gray-800 text-gray-400 border-gray-600' },
+            { code: 'sh000001', tag: '成长(场外)', name: '永赢锐见成长混合C', baseAmount: 864.04, bg: 'bg-gray-800 text-gray-400 border-gray-600' }
         ];
+
+        let isInitialized = false;
 
         function fetchRealTimeData() {
             const queryCodes = portfolio.map(item => item.code).join(',');
@@ -103,7 +101,7 @@
             let totalDailyProfit = 0;
             const updatedPortfolio = [];
 
-            // 第一遍循环：计算总资产和各项数据
+            // 数据处理逻辑
             portfolio.forEach(asset => {
                 const rawData = window[`v_${asset.code}`];
                 if (!rawData) return;
@@ -113,9 +111,17 @@
                 const priceChange = parseFloat(fields[31]); // 涨跌额
                 const changePercent = parseFloat(fields[32]); // 涨跌幅%
 
-                // 核心计算公式
-                const realTimeAmount = asset.shares * currentPrice; // 实时持仓金额
-                const dailyProfit = asset.shares * priceChange;     // 实时今日盈亏
+                // 核心：第一次加载时，利用初始金额自动逆向推算份额并锁定
+                if (!isInitialized) {
+                    // 对于场外基金，我们用昨天的模拟收盘价推算，保证金额大致准确
+                    const basePrice = (asset.code === 'sh000001' || asset.code === 'sz399395') 
+                                      ? (currentPrice - priceChange) : currentPrice;
+                    asset.calculatedShares = asset.baseAmount / (basePrice || 1);
+                }
+
+                // 实时资产 = 锁定的份额 × 实时报价
+                const realTimeAmount = asset.calculatedShares * currentPrice;
+                const dailyProfit = asset.calculatedShares * priceChange;
 
                 totalAssetValue += realTimeAmount;
                 totalDailyProfit += dailyProfit;
@@ -126,10 +132,11 @@
                 });
             });
 
-            // 第二遍循环：渲染表格（此时已知总资产，可计算准确占比）
+            isInitialized = true; // 锁定份额，防止以后金额不会随价格变动
+
+            // 渲染表格 (按实时金额降序排序)
             updatedPortfolio.sort((a, b) => b.realTimeAmount - a.realTimeAmount).forEach(asset => {
                 const weightPercent = ((asset.realTimeAmount / totalAssetValue) * 100).toFixed(2);
-                
                 const colorClass = asset.changePercent > 0 ? 'up' : (asset.changePercent < 0 ? 'down' : 'text-gray-400');
                 const sign = asset.changePercent > 0 ? '+' : '';
 
@@ -140,7 +147,7 @@
                         <span class="text-xs px-2 py-1 rounded border ${asset.bg} font-medium tracking-wide shadow-sm">${asset.tag}</span>
                     </td>
                     <td class="p-4 font-semibold text-gray-200">${asset.name}</td>
-                    <td class="p-4 font-mono text-gray-400">${asset.shares.toLocaleString()}</td>
+                    <td class="p-4 font-mono text-gray-500 text-sm">${asset.calculatedShares.toFixed(2)}</td>
                     <td class="p-4 font-mono text-blue-300 font-bold bg-blue-900/10">${asset.realTimeAmount.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
                     <td class="p-4">
                         <div class="flex items-center gap-2">
@@ -157,7 +164,7 @@
                 tbody.appendChild(tr);
             });
 
-            // 更新头部汇总数据
+            // 更新头部汇总
             document.getElementById('total-asset').innerText = totalAssetValue.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
             
             const profitSign = totalDailyProfit > 0 ? '+' : '';
