@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nora 的全天候投资看板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .up { color: #ef4444; } /* 红色上涨 */
+        .down { color: #22c55e; } /* 绿色下跌 */
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(55, 65, 81, 0.5);
+        }
+        /* 隐藏滚动条但允许滚动 */
+        ::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-200 font-sans p-4 md:p-8 min-h-screen bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- 头部 -->
+        <header class="flex flex-col md:flex-row md:justify-between md:items-end mb-8 border-b border-gray-800 pb-4 gap-4">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-emerald-400 tracking-tight">
+                    Nora's Portfolio
+                </h1>
+                <p class="text-gray-400 mt-2 text-sm flex items-center gap-2">
+                    <span>总资产参考: ¥36,772.71</span>
+                    <span class="text-gray-600">|</span>
+                    <span>红利 / 科技 / 周期 均衡配置</span>
+                </p>
+            </div>
+            <div class="text-sm font-mono text-blue-400 bg-blue-900/20 px-4 py-2 rounded-lg border border-blue-800/50 flex items-center gap-2" id="last-update">
+                <span class="animate-spin inline-block">↻</span> 数据同步中...
+            </div>
+        </header>
+
+        <!-- 核心持仓列表 -->
+        <div class="glass-panel rounded-2xl shadow-2xl overflow-hidden mb-8">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse whitespace-nowrap">
+                    <thead>
+                        <tr class="bg-gray-800/60 text-gray-400 text-sm tracking-wider">
+                            <th class="p-4 font-medium rounded-tl-xl">板块</th>
+                            <th class="p-4 font-medium">产品名称 (实盘映射)</th>
+                            <th class="p-4 font-medium">当前报价</th>
+                            <th class="p-4 font-medium">日内涨跌幅</th>
+                            <th class="p-4 font-medium">涨跌额</th>
+                            <th class="p-4 font-medium rounded-tr-xl">资产类型</th>
+                        </tr>
+                    </thead>
+                    <tbody id="fund-list">
+                        <tr><td colspan="6" class="p-10 text-center text-gray-500 font-mono">📡 正在直连腾讯财经服务器...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- 底部看板 -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- 策略模块 1 -->
+            <div class="glass-panel rounded-xl p-6 border-l-4 border-l-purple-500">
+                <h3 class="text-purple-400 font-bold mb-2">📊 仓位结构洞察</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    你的持仓兼顾了防守（红利低波、煤炭、油气）与进攻（科创芯片、香港科技）。当前周期类资产占比较高，在宏观震荡市中具备较强的抗跌性。
+                </p>
+            </div>
+            <!-- 策略模块 2 -->
+            <div class="glass-panel rounded-xl p-6 border-l-4 border-l-orange-500">
+                <h3 class="text-orange-400 font-bold mb-2">💡 优化建议回顾</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    如同之前提到的，南方红利低波 (3462元) 和 易方达红利低波 (2838元) 存在同质化，后续可考虑合并以降低管理精力。
+                </p>
+            </div>
+            <!-- 系统提示 -->
+            <div class="glass-panel rounded-xl p-6 border-l-4 border-l-gray-600">
+                <h3 class="text-gray-300 font-bold mb-2">⚠️ 场外基金说明</h3>
+                <p class="text-gray-400 text-sm leading-relaxed">
+                    富国资源精选与永赢锐见成长由于是场外混合基金，无盘中秒级数据。面板已自动为其匹配关联指数（国证有色/上证指数）以反馈日内趋势。
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 基于你截图中的真实持仓配置的映射表
+        const portfolio = [
+            // --- 科技与宽基 (场内 ETF) ---
+            { code: 'sh513020', tag: '香港科技', name: '国泰中证香港科技ETF', type: 'ETF', bg: 'bg-blue-900/40 text-blue-300 border-blue-700/50' },
+            { code: 'sh588260', tag: '科创芯片', name: '天弘科创芯片设计ETF', type: 'ETF', bg: 'bg-indigo-900/40 text-indigo-300 border-indigo-700/50' },
+            { code: 'sh515660', tag: '沪深300', name: '国联安沪深300ETF', type: 'ETF', bg: 'bg-red-900/40 text-red-300 border-red-700/50' },
+            
+            // --- 红利与周期防守 (场内 ETF/LOF) ---
+            { code: 'sh515220', tag: '中证煤炭', name: '国泰中证煤炭ETF', type: 'ETF', bg: 'bg-stone-800 text-stone-300 border-stone-600/50' },
+            { code: 'sh515450', tag: '红利低波', name: '南方标普红利低波50', type: 'ETF', bg: 'bg-orange-900/40 text-orange-300 border-orange-700/50' },
+            { code: 'sh563020', tag: '红利低波', name: '易方达中证红利低波动', type: 'ETF', bg: 'bg-orange-900/40 text-orange-300 border-orange-700/50' },
+            { code: 'sz160616', tag: '石油天然气', name: '鹏华国证油气LOF', type: 'LOF', bg: 'bg-yellow-900/40 text-yellow-300 border-yellow-700/50' },
+            { code: 'sh560060', tag: '电网设备', name: '华夏中证电网设备ETF', type: 'ETF', bg: 'bg-teal-900/40 text-teal-300 border-teal-700/50' },
+            { code: 'sz159870', tag: '细分化工', name: '天弘中证细分化工', type: 'ETF', bg: 'bg-fuchsia-900/40 text-fuchsia-300 border-fuchsia-700/50' },
+            
+            // --- 场外混合基金 (使用指数作为实时趋势平替) ---
+            { code: 'sz399395', tag: '锂矿(场外)', name: '富国资源精选C (挂钩国证有色)', type: '场外/指数', bg: 'bg-gray-800 text-gray-400 border-gray-600' },
+            { code: 'sh000001', tag: '成长(场外)', name: '永赢锐见成长C (挂钩上证大盘)', type: '场外/指数', bg: 'bg-gray-800 text-gray-400 border-gray-600' }
+        ];
+
+        function fetchRealTimeData() {
+            const queryCodes = portfolio.map(item => item.code).join(',');
+            const script = document.createElement('script');
+            // 添加时间戳防止缓存
+            script.src = `https://qt.gtimg.cn/q=${queryCodes}&t=${new Date().getTime()}`;
+            
+            script.onload = () => {
+                renderTable();
+                document.head.removeChild(script); 
+            };
+            document.head.appendChild(script);
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('fund-list');
+            tbody.innerHTML = ''; 
+
+            portfolio.forEach(asset => {
+                const rawData = window[`v_${asset.code}`];
+                if (!rawData) return;
+
+                const fields = rawData.split('~');
+                // 使用我们自定义的名字，而不是接口返回的名字，因为我们有场外基金的平替
+                const name = asset.name;           
+                const price = parseFloat(fields[3]).toFixed(3); 
+                const change = parseFloat(fields[31]).toFixed(3); 
+                const changePercent = parseFloat(fields[32]).toFixed(2); 
+
+                const colorClass = changePercent > 0 ? 'up' : (changePercent < 0 ? 'down' : 'text-gray-400');
+                const sign = changePercent > 0 ? '+' : '';
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-gray-800/50 hover:bg-gray-800/60 transition-colors duration-200";
+                tr.innerHTML = `
+                    <td class="p-4">
+                        <span class="text-xs px-2 py-1 rounded border ${asset.bg} font-medium tracking-wide shadow-sm">${asset.tag}</span>
+                    </td>
+                    <td class="p-4 font-semibold text-gray-200">${name}</td>
+                    <td class="p-4 text-lg font-bold ${colorClass}">${price}</td>
+                    <td class="p-4 font-bold ${colorClass} bg-gray-900/20">${sign}${changePercent}%</td>
+                    <td class="p-4 font-mono text-sm ${colorClass}">${sign}${change}</td>
+                    <td class="p-4 text-xs font-mono text-gray-500">${asset.type}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const now = new Date();
+            document.getElementById('last-update').innerHTML = `<span class="text-emerald-400">●</span> 同步时间: ${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+        }
+
+        // 初始化加载并设置5秒轮询
+        fetchRealTimeData();
+        setInterval(fetchRealTimeData, 5000);
+    </script>
+</body>
+</html>
